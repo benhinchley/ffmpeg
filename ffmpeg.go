@@ -8,8 +8,8 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 )
 
-// Command creates a new exec.Cmd instance
-func Command(global GlobalOptions, files ...*File) (*exec.Cmd, error) {
+// Command creates a new Cmd instance
+func Command(global GlobalOptions, files ...*File) (*Cmd, error) {
 	var i, o []*File
 	var err *multierror.Error
 
@@ -51,7 +51,10 @@ func Command(global GlobalOptions, files ...*File) (*exec.Cmd, error) {
 	cmd := exec.Command("ffmpeg", args...)
 	cmd.Env = append(cmd.Env, "AV_LOG_FORCE_NOCOLOR=TRUE")
 
-	return cmd, nil
+	return &Cmd{
+		Args: args,
+		cmd:  cmd,
+	}, nil
 }
 
 // GlobalOption ...
