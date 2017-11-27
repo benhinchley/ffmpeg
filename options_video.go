@@ -1,6 +1,9 @@
 package ffmpeg
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // Video options:
 // -vframes number     set the number of video frames to output
@@ -23,6 +26,14 @@ func WithSize(w, h int) FileOption {
 		return nil
 	}
 }
+
+func WithFramerate(rate int) FileOption {
+	return func(f *File) error {
+		f.options = append(f.options, []string{"-framerate", strconv.Itoa(rate)}...)
+		return nil
+	}
+}
+
 func WithPixelFormat(fmt PixelFormat) FileOption {
 	return func(f *File) error {
 		f.options = append(f.options, []string{"-pix_fmt", fmt.String()}...)
