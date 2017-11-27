@@ -23,3 +23,9 @@ func WithSize(w, h int) FileOption {
 		return nil
 	}
 }
+func WithPixelFormat(fmt PixelFormat) FileOption {
+	return func(f *File) error {
+		f.options = append(f.options, []string{"-pix_fmt", fmt.String()}...)
+		return nil
+	}
+}

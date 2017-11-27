@@ -30,9 +30,9 @@ import (
 // -discard            discard
 // -disposition        disposition
 
-func WithFormat(fmt string) FileOption {
+func WithFormat(fmt FileFormat) FileOption {
 	return func(f *File) error {
-		f.options = append(f.options, []string{"-f", fmt}...)
+		f.options = append(f.options, []string{"-f", fmt.String()}...)
 		return nil
 	}
 }
@@ -55,16 +55,16 @@ func WithStreamLoop(loop int) FileOption {
 	}
 }
 
-func WithVideoCodec(codec string) FileOption {
+func WithVideoCodec(codec Codec) FileOption {
 	return func(f *File) error {
-		f.options = append(f.options, []string{"-c:v", codec}...)
+		f.options = append(f.options, []string{"-c:v", codec.String()}...)
 		return nil
 	}
 }
 
-func WithAudioCodec(codec string) FileOption {
+func WithAudioCodec(codec Codec) FileOption {
 	return func(f *File) error {
-		f.options = append(f.options, []string{"-c:a", codec}...)
+		f.options = append(f.options, []string{"-c:a", codec.String()}...)
 		return nil
 	}
 }
