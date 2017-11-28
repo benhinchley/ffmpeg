@@ -49,7 +49,10 @@ func Command(global GlobalOptions, files ...*File) (*Cmd, error) {
 		r = append(r, ouput.Flags()...)
 	}
 
-	args := []string{"-hide_banner"}
+	// suppress printing the banner
+	// disable stdin interaction
+	// stop and exit on error
+	args := []string{"-hide_banner", "-nostdin", "-xerror"}
 	args = append(args, r...)
 
 	cmd := exec.Command("ffmpeg", args...)
