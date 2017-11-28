@@ -7,47 +7,36 @@ import (
 	"time"
 )
 
-// stream_loop      [number]                         [input]         [X]
-// itsoffset        [offset]                         [input]         [ ]
-// dump_attachment  [filename]                       [input]         [ ]
-// muxdelay         [seconds]                        [input]         [ ]
-// muxpreload       [seconds]                        [input]         [ ]
-// f                [fmt]                            [input output]  [X]
-// c                [codec]                          [input output]  [ ]
-// codec            [codec]                          [input output]  [ ]
-// t                [duration]                       [input output]  [X]
-// ss               [position]                       [input output]  [ ]
-// sseof            [position]                       [input output]  [ ]
-// to               [position]                       [output]        [ ]
-// fs               [limit_size]                     [output]        [ ]
-// timestamp        [date]                           [output]        [ ]
-// metadata         [key=value]                      [output]        [ ]
-// disposition      [value]                          [output]        [ ]
-// target           [type]                           [output]        [ ]
-// dframes          [number]                         [output]        [ ]
-// frames           [framecount]                     [output]        [ ]
-// q                [q]                              [output]        [ ]
-// qscale           [q]                              [output]        [ ]
-// filter           [filtergraph]                    [output]        [ ]
-// filter_script    [filename]                       [output]        [ ]
-// pre              [preset_name]                    [output]        [ ]
-// attach           [filename]                       [output]        [ ]
-// rc_override      [override]                       [output]        [ ]
-// top              [n]                              [output]        [ ]
-// shortest         []                               [output]        [ ]
-// streamid         [output-stream-index:new-value]  [output]        [ ]
-
-// WithFormat forces the the input or output file format
-//
-// The format is normally auto detected for input files and guessed
-// from the file extension for output files, so this option is
-// not needed in most cases.
-func WithFormat(typ FileFormat) FileOption {
-	return func(f *File) error {
-		f.options = append(f.options, []string{"-f", typ.String()}...)
-		return nil
-	}
-}
+// FLAG             SPEC   ARGS                              AFFECTS        IMPL
+// stream_loop      false  [number]                         [input]         [X]
+// itsoffset        false  [offset]                         [input]         [ ]
+// dump_attachment  true   [filename]                       [input]         [ ]
+// muxdelay         false  [seconds]                        [input]         [ ]
+// muxpreload       false  [seconds]                        [input]         [ ]
+// f                false  [fmt]                            [input output]  [X]
+// c                true   [codec]                          [input output]  [X]
+// codec            true   [codec]                          [input output]  [X]
+// t                false  [duration]                       [input output]  [X]
+// ss               false  [position]                       [input output]  [ ]
+// sseof            false  [position]                       [input output]  [ ]
+// to               false  [position]                       [output]        [ ]
+// fs               false  [limit_size]                     [output]        [ ]
+// timestamp        false  [date]                           [output]        [ ]
+// metadata         true   [key=value]                      [output]        [ ]
+// disposition      true   [value]                          [output]        [ ]
+// target           false  [type]                           [output]        [ ]
+// dframes          false  [number]                         [output]        [ ]
+// frames           true   [framecount]                     [output]        [ ]
+// q                true   [q]                              [output]        [ ]
+// qscale           true   [q]                              [output]        [ ]
+// filter           true   [filtergraph]                    [output]        [ ]
+// filter_script    true   [filename]                       [output]        [ ]
+// pre              true   [preset_name]                    [output]        [ ]
+// attach           false  [filename]                       [output]        [ ]
+// rc_override      true   [override]                       [output]        [ ]
+// top              true   [n]                              [output]        [ ]
+// shortest         false  []                               [output]        [ ]
+// streamid         false  [output-stream-index:new-value]  [output]        [ ]
 
 // WithStreamLoop sets the number of times input stream shall be looped
 //
@@ -63,17 +52,23 @@ func WithStreamLoop(loop int) FileOption {
 	}
 }
 
-
-func WithVideoCodec(codec Codec) FileOption {
+// WithFormat forces the the input or output file format
+//
+// The format is normally auto detected for input files and guessed
+// from the file extension for output files, so this option is
+// not needed in most cases.
+func WithFormat(ff FileFormat) FileOption {
 	return func(f *File) error {
-		f.options = append(f.options, []string{"-c:v", codec.String()}...)
+		f.options = append(f.options, []string{"-f", ff.String()}...)
 		return nil
 	}
 }
 
-func WithAudioCodec(codec Codec) FileOption {
+// WithCodec selects an encoder (when used before an output file)
+// or a decoder (when used before an input file) for one or more streams
+func WithCodec(stream StreamSpecifier, codec Codec) FileOption {
 	return func(f *File) error {
-		f.options = append(f.options, []string{"-c:a", codec.String()}...)
+		f.options = append(f.options, []string{"-c" + stream.String(), codec.String()}...)
 		return nil
 	}
 }
@@ -106,9 +101,17 @@ func WithFileSizeLimit(limit int) FileOption {
 	}
 }
 
-func WithPatternType(typ string) FileOption {
+// WithTimestamp sets the recording timestamp in the container
+func WithTimestamp(date time.Time) FileOption {
+	create := func(date time.Time) string {
+		return ""
+	}
 	return func(f *File) error {
-		f.options = append(f.options, []string{"-pattern_type", typ}...)
+		if f.typ == fileTypeOutput {
+			f.options = append(f.options, []string{"-timestamp", create(date)}...)
+		} else {
+			return fmt.Errorf("unable to apply -timestamp flag: not output file")
+		}
 		return nil
 	}
 }
