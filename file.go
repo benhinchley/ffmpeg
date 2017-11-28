@@ -2,7 +2,7 @@ package ffmpeg
 
 import multierror "github.com/hashicorp/go-multierror"
 
-// Input ...
+// Input creates a new File instance that represents an input file
 func Input(path string, opts ...FileOption) *File {
 	f := &File{
 		path: path,
@@ -20,7 +20,7 @@ func Input(path string, opts ...FileOption) *File {
 	return f
 }
 
-// Output ...
+// Output creates a new File instance that represents an output file
 func Output(path string, opts ...FileOption) *File {
 	f := &File{
 		path: path,
@@ -38,7 +38,7 @@ func Output(path string, opts ...FileOption) *File {
 	return f
 }
 
-// File ...
+// File represents an ffmpeg input or output file
 type File struct {
 	path    string
 	options []string
@@ -51,17 +51,17 @@ func (f *File) Flags() []string {
 	switch f.typ {
 	case fileTypeInput:
 		return append(f.options, []string{"-i", f.path}...)
-	case fileTypeOutput:
-		return append(f.options, f.path)
 	default:
-		return f.options
+		return append(f.options, f.path)
 	}
 }
 
 type fileType int
 
 const (
-	fileTypeGlobal fileType = iota - 1
-	fileTypeInput  fileType = iota
+	fileTypeInput fileType = iota
 	fileTypeOutput
 )
+
+// FileOption configures how a file is handled by ffmpeg
+type FileOption func(*File) error

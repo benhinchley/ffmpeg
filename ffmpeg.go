@@ -60,6 +60,3 @@ func Command(global GlobalOptions, files ...*File) (*Cmd, error) {
 		cmd:  cmd,
 	}, nil
 }
-
-// FileOption ...
-type FileOption func(*File) error
