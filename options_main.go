@@ -7,54 +7,62 @@ import (
 	"time"
 )
 
-// Per-file main options:
-// -f fmt              force format
-// -c codec            codec name
-// -codec codec        codec name
-// -pre preset         preset name
-// -map_metadata outfile[,metadata]:infile[,metadata]  set metadata information of outfile from infile
-// -t duration         record or transcode "duration" seconds of audio/video
-// -to time_stop       record or transcode stop time
-// -fs limit_size      set the limit file size in bytes
-// -ss time_off        set the start time offset
-// -sseof time_off     set the start time offset relative to EOF
-// -seek_timestamp     enable/disable seeking by timestamp with -ss
-// -timestamp time     set the recording timestamp ('now' to set the current time)
-// -metadata string=string  add metadata
-// -program title=string:st=number...  add program with specified streams
-// -target type        specify target file type ("vcd", "svcd", "dvd", "dv" or "dv50" with optional prefixes "pal-", "ntsc-" or "film-")
-// -apad               audio pad
-// -frames number      set the number of frames to output
-// -filter filter_graph  set stream filtergraph
-// -filter_script filename  read stream filtergraph description from a file
-// -reinit_filter      reinit filtergraph on input parameter changes
-// -discard            discard
-// -disposition        disposition
+// stream_loop      [number]                         [input]         [X]
+// itsoffset        [offset]                         [input]         [ ]
+// dump_attachment  [filename]                       [input]         [ ]
+// muxdelay         [seconds]                        [input]         [ ]
+// muxpreload       [seconds]                        [input]         [ ]
+// f                [fmt]                            [input output]  [X]
+// c                [codec]                          [input output]  [ ]
+// codec            [codec]                          [input output]  [ ]
+// t                [duration]                       [input output]  [X]
+// ss               [position]                       [input output]  [ ]
+// sseof            [position]                       [input output]  [ ]
+// to               [position]                       [output]        [ ]
+// fs               [limit_size]                     [output]        [ ]
+// timestamp        [date]                           [output]        [ ]
+// metadata         [key=value]                      [output]        [ ]
+// disposition      [value]                          [output]        [ ]
+// target           [type]                           [output]        [ ]
+// dframes          [number]                         [output]        [ ]
+// frames           [framecount]                     [output]        [ ]
+// q                [q]                              [output]        [ ]
+// qscale           [q]                              [output]        [ ]
+// filter           [filtergraph]                    [output]        [ ]
+// filter_script    [filename]                       [output]        [ ]
+// pre              [preset_name]                    [output]        [ ]
+// attach           [filename]                       [output]        [ ]
+// rc_override      [override]                       [output]        [ ]
+// top              [n]                              [output]        [ ]
+// shortest         []                               [output]        [ ]
+// streamid         [output-stream-index:new-value]  [output]        [ ]
 
-func WithFormat(fmt FileFormat) FileOption {
+// WithFormat forces the the input or output file format
+//
+// The format is normally auto detected for input files and guessed
+// from the file extension for output files, so this option is
+// not needed in most cases.
+func WithFormat(typ FileFormat) FileOption {
 	return func(f *File) error {
-		f.options = append(f.options, []string{"-f", fmt.String()}...)
+		f.options = append(f.options, []string{"-f", typ.String()}...)
 		return nil
 	}
 }
 
-func WithOverwrite(ovr bool) FileOption {
+// WithStreamLoop sets the number of times input stream shall be looped
+//
+// loop 0 means no loop, loop -1 means infinite loop
+func WithStreamLoop(loop int) FileOption {
 	return func(f *File) error {
-		if ovr {
-			f.options = append(f.options, "-y")
+		if f.typ == fileTypeInput {
+			f.options = append(f.options, []string{"-stream_loop", strconv.Itoa(loop)}...)
 		} else {
-			f.options = append(f.options, "-n")
+			return fmt.Errorf("unable to apply -stream_loop flag: not input file")
 		}
 		return nil
 	}
 }
 
-func WithStreamLoop(loop int) FileOption {
-	return func(f *File) error {
-		f.options = append(f.options, []string{"-stream_loop", strconv.Itoa(loop)}...)
-		return nil
-	}
-}
 
 func WithVideoCodec(codec Codec) FileOption {
 	return func(f *File) error {
@@ -72,6 +80,8 @@ func WithAudioCodec(codec Codec) FileOption {
 
 var regexpDuration = regexp.MustCompile(`((\d+)h)?((\d+)m)?(([0-9.]+)s)?`)
 
+// WithDuration when used as an input option limits the duration of the data read from the input file
+// and when used as an output option limits stops writing the ouput after its duration reaches duration.
 func WithDuration(dur time.Duration) FileOption {
 	create := func(dur time.Duration) string {
 		matches := regexpDuration.FindAllStringSubmatch(dur.String(), -1)
@@ -88,6 +98,7 @@ func WithDuration(dur time.Duration) FileOption {
 	}
 }
 
+// WithFileSizeLimit sets the file size limit, expressed in bytes
 func WithFileSizeLimit(limit int) FileOption {
 	return func(f *File) error {
 		f.options = append(f.options, []string{"-fs", strconv.Itoa(limit)}...)
