@@ -2,6 +2,7 @@ package ffmpeg
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -69,9 +70,17 @@ func WithAudioCodec(codec Codec) FileOption {
 	}
 }
 
+var regexpDuration = regexp.MustCompile(`((\d+)h)?((\d+)m)?(([0-9.]+)s)?`)
+
 func WithDuration(dur time.Duration) FileOption {
 	create := func(dur time.Duration) string {
-		return fmt.Sprintf("HH:MM:SS")
+		matches := regexpDuration.FindAllStringSubmatch(dur.String(), -1)
+
+		hour, _ := strconv.ParseInt(matches[0][2], 10, 32)
+		minute, _ := strconv.ParseInt(matches[0][4], 10, 32)
+		seconds, _ := strconv.ParseFloat(matches[0][6], 32)
+
+		return fmt.Sprintf("%02d:%02d:%f", hour, minute, seconds)
 	}
 	return func(f *File) error {
 		f.options = append(f.options, []string{"-t", create(dur)}...)
